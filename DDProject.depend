@@ -1,0 +1,18 @@
+# depslib dependency file v1.0
+1479433722 source:/home/pi/Documents/DDProject/main.c
+	<stdio.h>
+	<stdlib.h>
+	<linux/i2c-dev.h>
+	<fcntl.h>
+	<string.h>
+	<sys/ioctl.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<unistd.h>
+	<time.h>
+	<wiringPi.h>
+	<geniePi.h>
+	<pthread.h>
+	<errno.h>
+	<string.h>
+
