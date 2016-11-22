@@ -68,12 +68,18 @@ static void *handleTime(void *data) {
 
 static void *handleAngularMeter(void *data) {
 
-int fd;                                   /* File descriptor*/
-const char *fileName = "/dev/i2c-1";  /* Name of the port we will be using. On Raspberry 2 this is i2c-1, on an older Raspberry Pi 1 this might be i2c-0.*/
-int  address = 0x27;                  /* Address of Honeywell sensor shifted right 1 bit */
-unsigned char buf[4];             /* Buffer for data read/written on the i2c bus */
-char hum[30];
-char tempo[30];
+    int fd;                                   /* File descriptor*/
+    const char *fileName = "/dev/i2c-1";  /* Name of the port we will be using. On Raspberry 2 this is i2c-1, on an older Raspberry Pi 1 this might be i2c-0.*/
+    int  address = 0x27;                  /* Address of Honeywell sensor shifted right 1 bit */
+    unsigned char buf[4];             /* Buffer for data read/written on the i2c bus */
+    char hum[30];
+    char tempo[30];
+
+    wiringPiSetup();
+    pinMode (0, OUTPUT);
+    pinMode (1, OUTPUT);
+    pinMode (4, OUTPUT);
+    pinMode (5, OUTPUT);
 
     for (;;) {
 
@@ -126,15 +132,40 @@ char tempo[30];
             sprintf(tempo, "Temperature: %d", temperatura);
             printf("Temperature: %s\n\n", tempo);
 
+            //Write to red LED
+            if (temperatura > 27) {
+                digitalWrite(5, HIGH);
+            } else {
+                digitalWrite(5,LOW);
+            }
+
+            //Write to RGB LED
+            if (humedad < 40) {
+                digitalWrite(1, HIGH);
+                delay(500);
+                digitalWrite(1, LOW);
+            } else if (humedad < 70) {
+                digitalWrite(4, HIGH);
+                delay(500);
+                digitalWrite(4, LOW);
+            } else {
+                digitalWrite(0, HIGH);
+                delay(500);
+                digitalWrite(0, LOW);
+            }
+
+            //Write to angular meter
             genieWriteObj(GENIE_OBJ_ANGULAR_METER, 0, temperatura);
+            //Write to meter
             genieWriteObj(GENIE_OBJ_METER, 0, humedad);
 
             if (temperatura > alarma)
-                genieWriteObj(GENIE_OBJ_USER_LED, 0, 1);
+                genieWriteObj(GENIE_OBJ_USER_LED, 0, 1); //turn on the alarm
             else
-                genieWriteObj(GENIE_OBJ_USER_LED, 0, 0);
+                genieWriteObj(GENIE_OBJ_USER_LED, 0, 0); //turn off the alarm
 
             char* temp = concat(temperatura, humedad);
+            //Write to String0 in display
             genieWriteStr(0x00, temp);
             free(temp);
             usleep(500000);
@@ -150,10 +181,12 @@ void handleGenieEvent (struct genieReplyStruct * reply)
         if(reply->object == GENIE_OBJ_KNOB)
         {
             if(reply->index == 0) {
+                //sets the threshold for the alarm
                 alarma = reply->data;
 
                 char temp2[30] = "prueba";
                 snprintf(temp2, 10, "%d", alarma);
+                //Writes the threshold to String1 in display
                 genieWriteStr(0x01, temp2);
 
             }
